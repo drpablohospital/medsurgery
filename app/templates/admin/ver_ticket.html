@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle Ticket #{{ ticket.numero }} - PromoCir{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2>Ticket #{{ ticket.numero }}</h2>
+            <p>Detalle completo del ticket</p>
+        </div>
+        <a href="{{ url_for('admin.tickets') }}" class="glass-btn glass-btn-sm">← Volver a Tickets</a>
+    </div>
+</div>
+
+<div class="grid grid-cols-2" style="margin-bottom: 24px;">
+    <!-- Información General -->
+    <div class="glass-card">
+        <h3 style="margin-bottom: 16px; font-size: 18px;">Información General</h3>
+        
+        <div style="margin-bottom: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Estado</div>
+            <div>
+                <span class="badge badge-{{ 'success' if ticket.estado == 'cobrado' else 'info' if ticket.estado == 'pagado' else 'warning' if ticket.estado == 'pendiente' else 'accent' if ticket.estado == 'aprobado' else 'danger' }}">
+                    {{ ticket.estado | title }}
+                </span>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Monto del Ticket</div>
+            <div style="font-size: 24px; font-weight: 700; color: var(--accent);">{{ ticket.monto | currency }}</div>
+        </div>
+        
+        {% if ticket.visita %}
+        <div style="margin-bottom: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Costo de la Visita</div>
+            <div style="font-size: 18px; font-weight: 600; color: var(--warning);">{{ ticket.visita.costo_visita | currency }}</div>
+        </div>
+        
+        <div style="margin-bottom: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 4px;">Balance (Ingresos - Gastos)</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--success);">
+                {% set ingresos = 0 %}
+                {% if ticket.materiales_vendidos %}
+                    {% for mat in ticket.materiales_vendidos %}
+                        {% set ingresos = ingresos + (mat.precio_venta * mat.cantidad) %}
+                    {% endfor %}
+                {% endif %}
+                {{ (ingresos - ticket.visita.costo_visita) | currency }}
+            </div>
+        </div>
+        {% endif %}
+        
+        <div style="margin-bottom: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Fecha de Creación</div>
+            <div>{{ ticket.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+        </div>
+        
+        {% if ticket.fecha_cierre_promotor %}
+        <div style="margin-bottom: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Fecha de Cierre por Promotor</div>
+            <div>{{ ticket.fecha_cierre_promotor.strftime('%d/%m/%Y %H:%M') }}</div>
+        </div>
+        {% endif %}
+        
+        {% if ticket.fecha_aprobacion %}
+        <div style="margin-bottom: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Fecha de Aprobación</div>
+            <div>{{ ticket.fecha_aprobacion.strftime('%d/%m/%Y %H:%M') }}</div>
+        </div>
+        {% endif %}
+        
+        {% if ticket.fecha_pago %}
+        <div style="margin-bottom: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Fecha de Pago</div>
+            <div>{{ ticket.fecha_pago.strftime('%d/%m/%Y %H:%M') }}</div>
+        </div>
+        {% endif %}
+        
+        {% if ticket.fecha_cobro %}
+        <div style="margin-bottom: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Fecha de Cobro</div>
+            <div>{{ ticket.fecha_cobro.strftime('%d/%m/%Y %H:%M') }}</div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Datos del Promotor y Visita -->
+    <div class="glass-card">
+        <h3 style="margin-bottom: 16px; font-size: 18px;">Datos del Promotor y Visita</h3>
+        
+        <div style="margin-bottom: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Promotor</div>
+            <div style="font-size: 16px; font-weight: 600;">{{ ticket.usuario.nombre }}</div>
+            <div style="font-size: 13px; color: var(--text-muted);">{{ ticket.usuario.email }}</div>
+        </div>
+        
+        {% if ticket.visita %}
+        <div style="margin-bottom: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Hospital</div>
+            <div style="font-size: 16px; font-weight: 600;">{{ ticket.visita.hospital.nombre }}</div>
+            <div style="font-size: 13px; color: var(--text-muted);">{{ ticket.visita.hospital.ciudad }}</div>
+        </div>
+        
+        <div style="margin-bottom: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Fecha de Visita</div>
+            <div>{{ ticket.visita.get_fecha_str() }} {{ ticket.visita.get_hora_inicio_str() }}</div>
+        </div>
+        
+        <div style="margin-bottom: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Duración</div>
+            <div>{{ ticket.visita.duracion_minutos }} minutos</div>
+        </div>
+        {% endif %}
+        
+        {% if ticket.descripcion %}
+        <div style="margin-bottom: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Descripción</div>
+            <div>{{ ticket.descripcion }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if ticket.materiales_vendidos %}
+<div class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="margin-bottom: 16px; font-size: 18px;">Materiales Vendidos</h3>
+    <table class="glass-table">
+        <thead>
+            <tr>
+                <th>Material</th>
+                <th>Cantidad</th>
+                <th>Precio Unitario</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set total_materiales = 0 %}
+            {% for mat in ticket.materiales_vendidos %}
+            {% set subtotal = mat.cantidad * mat.precio_venta %}
+            {% set total_materiales = total_materiales + subtotal %}
+            <tr>
+                <td>{{ mat.nombre }}</td>
+                <td>{{ mat.cantidad }}</td>
+                <td>${{ '%.2f'|format(mat.precio_venta) }}</td>
+                <td>${{ '%.2f'|format(subtotal) }}</td>
+            </tr>
+            {% endfor %}
+            <tr style="font-weight: 700; background: rgba(255,255,255,0.05);">
+                <td colspan="3" style="text-align: right;">Total Ingresos (Materiales):</td>
+                <td style="color: var(--success);">${{ '%.2f'|format(total_materiales) }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Factura -->
+<div class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="margin-bottom: 16px; font-size: 18px;">Factura</h3>
+    
+    {% if ticket.factura_url %}
+    <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+        <div style="font-size: 48px;">📄</div>
+        <div style="flex: 1; min-width: 200px;">
+            <div style="font-weight: 600; margin-bottom: 4px;">Factura adjunta</div>
+            <div style="font-size: 13px; color: var(--text-muted);">Archivo: {{ ticket.factura_url.split('/')[-1] }}</div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="/static/{{ ticket.factura_url }}" target="_blank" class="glass-btn glass-btn-primary">
+                👁️ Ver Factura
+            </a>
+            <a href="/static/{{ ticket.factura_url }}" download class="glass-btn glass-btn-sm">
+                💾 Descargar
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <p style="color: var(--text-muted); text-align: center;">No hay factura adjunta</p>
+    {% endif %}
+</div>
+
+{% if ticket.notas_cierre %}
+<div class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="margin-bottom: 16px; font-size: 18px;">Notas de Cierre</h3>
+    <div style="white-space: pre-wrap; word-break: break-word; line-height: 1.6;" class="notas-contenido">{{ ticket.notas_cierre }}</div>
+</div>
+{% endif %}
+
+<!-- Acciones según estado -->
+<div class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="margin-bottom: 16px; font-size: 18px;">Acciones</h3>
+    
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        {% if ticket.estado == 'cerrado_por_promotor' %}
+        <form method="POST" action="{{ url_for('admin.ticket_aprobar', ticket_id=ticket.id) }}" style="display: inline;">
+            <button type="submit" class="glass-btn glass-btn-success">✓ Aprobar Ticket</button>
+        </form>
+        
+        <form method="POST" action="{{ url_for('admin.ticket_rechazar', ticket_id=ticket.id) }}" style="display: inline;">
+            <button type="submit" class="glass-btn glass-btn-danger">✗ Rechazar Ticket</button>
+        </form>
+        
+        {% elif ticket.estado == 'aprobado' %}
+        <form method="POST" action="{{ url_for('admin.ticket_pagar', ticket_id=ticket.id) }}" style="display: inline;">
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; margin-bottom: 4px;">Método de Pago</label>
+                <select name="metodo_pago" class="glass-input">
+                    <option value="transferencia">Transferencia Bancaria</option>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="cheque">Cheque</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; margin-bottom: 4px;">Referencia de Pago</label>
+                <input type="text" name="referencia_pago" class="glass-input" placeholder="Ej: TRX123456">
+            </div>
+            <button type="submit" class="glass-btn glass-btn-success">💰 Registrar Pago</button>
+        </form>
+        
+        {% elif ticket.estado == 'pagado' %}
+        <form method="POST" action="{{ url_for('admin.ticket_confirmar', ticket_id=ticket.id) }}" style="display: inline;">
+            <div style="background: rgba(0,255,0,0.1); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                <div style="font-weight: 600; margin-bottom: 8px; color: var(--success);">✅ Ticket Pagado - Listo para Confirmar</div>
+                <div style="font-size: 14px; color: var(--text-muted);">
+                    Al confirmar, el ticket pasará a estado "Cobrado" y se contabilizarán los ingresos en el reporte financiero.
+                </div>
+            </div>
+            <button type="submit" class="glass-btn glass-btn-success" style="font-size: 18px; padding: 12px 24px;">
+                ✓ Confirmar Cobro
+            </button>
+        </form>
+        
+        {% elif ticket.estado == 'cobrado' %}
+        <div style="background: rgba(0,255,0,0.1); border-radius: 12px; padding: 16px; text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 8px;">✅</div>
+            <div style="font-weight: 600; color: var(--success);">Ticket Cobrado</div>
+            <div style="font-size: 14px; color: var(--text-muted);">Este ticket ya ha sido confirmado y contabilizado.</div>
+        </div>
+        
+        {% elif ticket.estado == 'rechazado' %}
+        <div style="background: rgba(255,0,0,0.1); border-radius: 12px; padding: 16px; text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 8px;">❌</div>
+            <div style="font-weight: 600; color: var(--danger);">Ticket Rechazado</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

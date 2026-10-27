@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Generar Ticket - {{ visita.hospital.nombre }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Generar Ticket de Cobro</h2>
+    <p>{{ visita.hospital.nombre }} · {{ visita.get_fecha_str() }} · {{ visita.get_hora_inicio_str() }}</p>
+</div>
+
+<div class="grid grid-cols-2">
+    <div class="glass-card">
+        <h3 style="margin-bottom: 20px;">Información de la Visita</h3>
+        <div style="margin-bottom: 12px;">
+            <strong>Paciente:</strong> {{ visita.paciente_nombre }}
+        </div>
+        <div style="margin-bottom: 12px;">
+            <strong>Cirujano:</strong> {{ visita.cirujano_nombre }} ({{ visita.cirujano_especialidad }})
+        </div>
+        <div style="margin-bottom: 12px;">
+            <strong>Tipo de Cirugía:</strong> {{ visita.tipo_cirugia }}
+        </div>
+        <div style="margin-bottom: 12px;">
+            <strong>Honorarios:</strong> <span style="color: var(--accent); font-weight: 700;">{{ visita.costo_visita | currency }}</span>
+        </div>
+    </div>
+    
+    <div class="glass-card">
+        <h3 style="margin-bottom: 20px;">Declaración de Materiales Vendidos</h3>
+        <p style="color: var(--text-muted); margin-bottom: 16px;">
+            Marca los materiales que vendiste y especifica el precio de venta. 
+            Estos ingresos constituyen las ganancias de la organización.
+        </p>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('visitas.generar_ticket', visita_id=visita.id) }}">
+    <div class="glass-card" style="margin-top: 24px;">
+        <h3 style="margin-bottom: 20px;">Materiales Ofrecidos</h3>
+        
+        {% if materiales %}
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Vendido</th>
+                    <th>Material</th>
+                    <th>Categoría</th>
+                    <th>Cantidad</th>
+                    <th>Precio Venta Unitario</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mat in materiales %}
+                <tr>
+                    <td>
+                        <input type="checkbox" name="material_vendido_{{ loop.index0 }}" id="mat_{{ loop.index0 }}" 
+                               onchange="calcularTotal()" class="glass-checkbox">
+                    </td>
+                    <td>{{ mat.nombre }}</td>
+                    <td>{{ mat.categoria or 'N/A' }}</td>
+                    <td>
+                        <input type="number" name="cantidad_{{ loop.index0 }}" value="1" min="1" 
+                               class="glass-input" style="width: 80px;" onchange="calcularTotal()">
+                    </td>
+                    <td>
+                        <input type="number" name="precio_venta_{{ loop.index0 }}" value="0" min="0" step="0.01"
+                               class="glass-input" style="width: 120px;" onchange="calcularTotal()">
+                    </td>
+                    <td class="subtotal" id="subtotal_{{ loop.index0 }}">$0.00</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr style="font-weight: bold; border-top: 2px solid var(--accent);">
+                    <td colspan="5" style="text-align: right;">Total Venta Materiales:</td>
+                    <td id="total_venta" style="color: var(--accent); font-size: 18px;">$0.00</td>
+                </tr>
+                <tr style="font-weight: bold;">
+                    <td colspan="5" style="text-align: right;">Honorarios Promotor:</td>
+                    <td style="color: var(--success);">{{ visita.costo_visita | currency }}</td>
+                </tr>
+            </tfoot>
+        </table>
+        {% else %}
+        <p style="color: var(--text-muted);">No hay materiales ofrecidos en esta visita.</p>
+        {% endif %}
+        
+        <div style="margin-top: 24px; display: flex; gap: 12px;">
+            <button type="submit" class="glass-btn glass-btn-primary">Generar Ticket</button>
+            <a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}" class="glass-btn">Cancelar</a>
+        </div>
+    </div>
+</form>
+
+<script>
+function calcularTotal() {
+    const rows = document.querySelectorAll('tbody tr');
+    let total = 0;
+    
+    rows.forEach((row, idx) => {
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        const cantidadInput = row.querySelector('input[name^="cantidad_"]');
+        const precioInput = row.querySelector('input[name^="precio_venta_"]');
+        const subtotalCell = row.querySelector('.subtotal');
+        
+        if (checkbox.checked) {
+            const cantidad = parseInt(cantidadInput.value) || 0;
+            const precio = parseFloat(precioInput.value) || 0;
+            const subtotal = cantidad * precio;
+            subtotalCell.textContent = '$' + subtotal.toLocaleString('es-MX', {minimumFractionDigits: 2});
+            total += subtotal;
+        } else {
+            subtotalCell.textContent = '$0.00';
+        }
+    });
+    
+    document.getElementById('total_venta').textContent = '$' + total.toLocaleString('es-MX', {minimumFractionDigits: 2});
+}
+</script>
+{% endblock %}

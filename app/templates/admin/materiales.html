@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}Materiales - PromoCir{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2>Materiales</h2>
+            <p>Catálogo de materiales quirúrgicos disponibles</p>
+        </div>
+        <button onclick="document.getElementById('modalNuevo').style.display='flex'" class="glass-btn glass-btn-primary">+ Nuevo Material</button>
+    </div>
+</div>
+
+<div class="glass-card">
+    <table class="glass-table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Categoría</th>
+                <th>Descripción</th>
+                <th>Costo Ref.</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in materiales %}
+            <tr>
+                <td><strong>{{ m.nombre }}</strong></td>
+                <td><span class="badge badge-info">{{ m.categoria or 'General' }}</span></td>
+                <td>{{ m.descripcion or '-' }}</td>
+                <td>{{ m.costo_referencia | currency }}</td>
+                <td><span class="badge badge-{{ 'success' if m.activo else 'danger' }}">{{ 'Activo' if m.activo else 'Inactivo' }}</span></td>
+                <td>
+                    <button onclick="editarMaterial({{ m.id }}, '{{ m.nombre }}', '{{ m.categoria or '' }}', '{{ m.descripcion or '' }}', {{ m.costo_referencia }}, {{ 'true' if m.activo else 'false' }})" class="glass-btn glass-btn-sm">Editar</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Nuevo Material -->
+<div id="modalNuevo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="glass-card" style="max-width: 500px; width: 90%;">
+        <h3 style="margin-bottom: 20px;">Nuevo Material</h3>
+        <form method="POST" action="{{ url_for('admin.material_nuevo') }}">
+            <div class="form-group">
+                <label>Nombre *</label>
+                <input type="text" name="nombre" class="glass-input" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <input type="text" name="categoria" class="glass-input" placeholder="Ej: Ortopedia, Laparoscopia">
+                </div>
+                <div class="form-group">
+                    <label>Costo Referencia</label>
+                    <input type="number" name="costo_referencia" class="glass-input" value="0" min="0" step="0.01">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea name="descripcion" class="glass-input"></textarea>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button type="submit" class="glass-btn glass-btn-primary">Crear Material</button>
+                <button type="button" onclick="document.getElementById('modalNuevo').style.display='none'" class="glass-btn">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar Material -->
+<div id="modalEditar" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="glass-card" style="max-width: 500px; width: 90%;">
+        <h3 style="margin-bottom: 20px;">Editar Material</h3>
+        <form id="formEditar" method="POST" action="">
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" name="nombre" id="editNombre" class="glass-input" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <input type="text" name="categoria" id="editCategoria" class="glass-input">
+                </div>
+                <div class="form-group">
+                    <label>Costo Referencia</label>
+                    <input type="number" name="costo_referencia" id="editCosto" class="glass-input" min="0" step="0.01">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea name="descripcion" id="editDescripcion" class="glass-input"></textarea>
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="activo" id="editActivo" value="on">
+                    <span>Activo</span>
+                </label>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button type="submit" class="glass-btn glass-btn-primary">Guardar Cambios</button>
+                <button type="button" onclick="document.getElementById('modalEditar').style.display='none'" class="glass-btn">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function editarMaterial(id, nombre, categoria, descripcion, costo, activo) {
+    document.getElementById('formEditar').action = `/admin/materiales/${id}/editar`;
+    document.getElementById('editNombre').value = nombre;
+    document.getElementById('editCategoria').value = categoria;
+    document.getElementById('editDescripcion').value = descripcion;
+    document.getElementById('editCosto').value = costo;
+    document.getElementById('editActivo').checked = activo;
+    document.getElementById('modalEditar').style.display = 'flex';
+}
+
+window.onclick = function(e) {
+    if (e.target.id === 'modalNuevo') document.getElementById('modalNuevo').style.display = 'none';
+    if (e.target.id === 'modalEditar') document.getElementById('modalEditar').style.display = 'none';
+}
+</script>
+{% endblock %}

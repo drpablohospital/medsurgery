@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Promotores - PromoCir{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2>Promotores</h2>
+            <p>Gestión del equipo de promotores médicos</p>
+        </div>
+        <button onclick="document.getElementById('modalNuevo').style.display='block'" class="glass-btn glass-btn-primary">+ Nuevo Promotor</button>
+    </div>
+</div>
+
+<div class="glass-card">
+    <table class="glass-table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Región</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in promotores %}
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">{{ p.nombre[0] }}</div>
+                        <span>{{ p.nombre }}</span>
+                    </div>
+                </td>
+                <td>{{ p.email }}</td>
+                <td>{{ p.telefono or '-' }}</td>
+                <td>{{ p.region_asignada or '-' }}</td>
+                <td><span class="badge badge-{{ 'success' if p.activo else 'danger' }}">{{ 'Activo' if p.activo else 'Inactivo' }}</span></td>
+                <td>
+                    <button onclick="editarPromotor({{ p.id }}, '{{ p.nombre }}', '{{ p.email }}', '{{ p.telefono or '' }}', '{{ p.region_asignada or '' }}', {{ 'true' if p.activo else 'false' }})" class="glass-btn glass-btn-sm">Editar</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Nuevo Promotor -->
+<div id="modalNuevo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="glass-card" style="max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+        <h3 style="margin-bottom: 20px;">Nuevo Promotor</h3>
+        <form method="POST" action="{{ url_for('admin.promotor_nuevo') }}">
+            <div class="form-group">
+                <label>Nombre *</label>
+                <input type="text" name="nombre" class="glass-input" required>
+            </div>
+            <div class="form-group">
+                <label>Email *</label>
+                <input type="email" name="email" class="glass-input" required>
+            </div>
+            <div class="form-group">
+                <label>Contraseña *</label>
+                <input type="password" name="password" class="glass-input" minlength="6" required>
+            </div>
+            <div class="form-group">
+                <label>Teléfono</label>
+                <input type="text" name="telefono" class="glass-input">
+            </div>
+            <div class="form-group">
+                <label>Región Asignada</label>
+                <input type="text" name="region_asignada" class="glass-input" placeholder="Ej: Centro, Norte, Sur">
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button type="submit" class="glass-btn glass-btn-primary">Crear Promotor</button>
+                <button type="button" onclick="document.getElementById('modalNuevo').style.display='none'" class="glass-btn">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar Promotor -->
+<div id="modalEditar" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="glass-card" style="max-width: 500px; width: 90%;">
+        <h3 style="margin-bottom: 20px;">Editar Promotor</h3>
+        <form id="formEditar" method="POST" action="">
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" name="nombre" id="editNombre" class="glass-input" required>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" id="editEmail" class="glass-input" required>
+            </div>
+            <div class="form-group">
+                <label>Nueva Contraseña (dejar en blanco para no cambiar)</label>
+                <input type="password" name="nueva_password" class="glass-input" minlength="6">
+            </div>
+            <div class="form-group">
+                <label>Teléfono</label>
+                <input type="text" name="telefono" id="editTelefono" class="glass-input">
+            </div>
+            <div class="form-group">
+                <label>Región Asignada</label>
+                <input type="text" name="region_asignada" id="editRegion" class="glass-input">
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="activo" id="editActivo" value="on">
+                    <span>Activo</span>
+                </label>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button type="submit" class="glass-btn glass-btn-primary">Guardar Cambios</button>
+                <button type="button" onclick="document.getElementById('modalEditar').style.display='none'" class="glass-btn">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function editarPromotor(id, nombre, email, telefono, region, activo) {
+    document.getElementById('formEditar').action = `/admin/promotores/${id}/editar`;
+    document.getElementById('editNombre').value = nombre;
+    document.getElementById('editEmail').value = email;
+    document.getElementById('editTelefono').value = telefono;
+    document.getElementById('editRegion').value = region;
+    document.getElementById('editActivo').checked = activo;
+    document.getElementById('modalEditar').style.display = 'flex';
+}
+
+// Cerrar modales al hacer click fuera
+window.onclick = function(e) {
+    if (e.target.id === 'modalNuevo') document.getElementById('modalNuevo').style.display = 'none';
+    if (e.target.id === 'modalEditar') document.getElementById('modalEditar').style.display = 'none';
+}
+</script>
+{% endblock %}

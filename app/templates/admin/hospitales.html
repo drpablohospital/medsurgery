@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block title %}Hospitales - PromoCir{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2>Hospitales</h2>
+            <p>Catálogo de hospitales del estado de Querétaro</p>
+        </div>
+        <button onclick="document.getElementById('modalNuevo').style.display='flex'" class="glass-btn glass-btn-primary">+ Nuevo Hospital</button>
+    </div>
+</div>
+
+<div class="glass-card">
+    <table class="glass-table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Ciudad</th>
+                <th>Dirección</th>
+                <th>Teléfono</th>
+                <th>Contacto</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for h in hospitales %}
+            <tr>
+                <td><strong>{{ h.nombre }}</strong></td>
+                <td>{{ h.ciudad }}</td>
+                <td>{{ h.direccion or '-' }}</td>
+                <td>{{ h.telefono or '-' }}</td>
+                <td>
+                    {% if h.contacto_nombre %}
+                        {{ h.contacto_nombre }}<br>
+                        <small style="color: var(--text-muted);">{{ h.contacto_telefono or '' }}</small>
+                    {% else %}-{% endif %}
+                </td>
+                <td><span class="badge badge-info">{{ h.tipo | title }}</span></td>
+                <td><span class="badge badge-{{ 'success' if h.activo else 'danger' }}">{{ 'Activo' if h.activo else 'Inactivo' }}</span></td>
+                <td>
+                    <button onclick="editarHospital({{ h.id }}, '{{ h.nombre }}', '{{ h.direccion or '' }}', '{{ h.ciudad }}', '{{ h.telefono or '' }}', '{{ h.contacto_nombre or '' }}', '{{ h.contacto_email or '' }}', '{{ h.contacto_telefono or '' }}', '{{ h.tipo }}', '{{ h.notas or '' }}', {{ 'true' if h.activo else 'false' }})" class="glass-btn glass-btn-sm">Editar</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Nuevo Hospital -->
+<div id="modalNuevo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="glass-card" style="max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+        <h3 style="margin-bottom: 20px;">Nuevo Hospital</h3>
+        <form method="POST" action="{{ url_for('admin.hospital_nuevo') }}">
+            <div class="form-group">
+                <label>Nombre *</label>
+                <input type="text" name="nombre" class="glass-input" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Dirección</label>
+                    <input type="text" name="direccion" class="glass-input">
+                </div>
+                <div class="form-group">
+                    <label>Ciudad</label>
+                    <input type="text" name="ciudad" class="glass-input" value="Querétaro">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="text" name="telefono" class="glass-input">
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select name="tipo" class="glass-input">
+                        <option value="privado">Privado</option>
+                        <option value="publico">Público</option>
+                        <option value="universitario">Universitario</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin: 20px 0; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                <h4 style="margin-bottom: 12px; font-size: 14px; color: var(--text-muted);">Contacto Principal</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <input type="text" name="contacto_nombre" class="glass-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="contacto_email" class="glass-input">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono Contacto</label>
+                    <input type="text" name="contacto_telefono" class="glass-input">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Notas</label>
+                <textarea name="notas" class="glass-input" placeholder="Información adicional..."></textarea>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button type="submit" class="glass-btn glass-btn-primary">Crear Hospital</button>
+                <button type="button" onclick="document.getElementById('modalNuevo').style.display='none'" class="glass-btn">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar Hospital -->
+<div id="modalEditar" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="glass-card" style="max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+        <h3 style="margin-bottom: 20px;">Editar Hospital</h3>
+        <form id="formEditar" method="POST" action="">
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" name="nombre" id="editNombre" class="glass-input" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Dirección</label>
+                    <input type="text" name="direccion" id="editDireccion" class="glass-input">
+                </div>
+                <div class="form-group">
+                    <label>Ciudad</label>
+                    <input type="text" name="ciudad" id="editCiudad" class="glass-input">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="text" name="telefono" id="editTelefono" class="glass-input">
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select name="tipo" id="editTipo" class="glass-input">
+                        <option value="privado">Privado</option>
+                        <option value="publico">Público</option>
+                        <option value="universitario">Universitario</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Contacto Nombre</label>
+                    <input type="text" name="contacto_nombre" id="editContactoNombre" class="glass-input">
+                </div>
+                <div class="form-group">
+                    <label>Contacto Email</label>
+                    <input type="email" name="contacto_email" id="editContactoEmail" class="glass-input">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Contacto Teléfono</label>
+                <input type="text" name="contacto_telefono" id="editContactoTelefono" class="glass-input">
+            </div>
+            <div class="form-group">
+                <label>Notas</label>
+                <textarea name="notas" id="editNotas" class="glass-input"></textarea>
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="activo" id="editActivo" value="on">
+                    <span>Activo</span>
+                </label>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button type="submit" class="glass-btn glass-btn-primary">Guardar Cambios</button>
+                <button type="button" onclick="document.getElementById('modalEditar').style.display='none'" class="glass-btn">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function editarHospital(id, nombre, direccion, ciudad, telefono, contactoNombre, contactoEmail, contactoTelefono, tipo, notas, activo) {
+    document.getElementById('formEditar').action = `/admin/hospitales/${id}/editar`;
+    document.getElementById('editNombre').value = nombre;
+    document.getElementById('editDireccion').value = direccion;
+    document.getElementById('editCiudad').value = ciudad;
+    document.getElementById('editTelefono').value = telefono;
+    document.getElementById('editContactoNombre').value = contactoNombre;
+    document.getElementById('editContactoEmail').value = contactoEmail;
+    document.getElementById('editContactoTelefono').value = contactoTelefono;
+    document.getElementById('editTipo').value = tipo;
+    document.getElementById('editNotas').value = notas;
+    document.getElementById('editActivo').checked = activo;
+    document.getElementById('modalEditar').style.display = 'flex';
+}
+
+window.onclick = function(e) {
+    if (e.target.id === 'modalNuevo') document.getElementById('modalNuevo').style.display = 'none';
+    if (e.target.id === 'modalEditar') document.getElementById('modalEditar').style.display = 'none';
+}
+</script>
+{% endblock %}

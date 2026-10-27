@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - PromoCir{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Dashboard</h2>
+    <p>Bienvenido, {{ current_user.nombre }}</p>
+</div>
+
+<div class="grid grid-cols-4" style="margin-bottom: 32px;">
+    <div class="glass-card stat-card">
+        <div class="stat-value">{{ visitas_mes }}</div>
+        <div class="stat-label">Visitas Este Mes</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value">{{ total_ganado | currency }}</div>
+        <div class="stat-label">Total Cobrado</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value">{{ total_venta_materiales | currency }}</div>
+        <div class="stat-label">Venta Materiales</div>
+        <div class="stat-label">Total Cobrado</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value">{{ tickets_pendientes | length }}</div>
+        <div class="stat-label">Tickets Pendientes</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value">{{ proximas_visitas | length }}</div>
+        <div class="stat-label">Próximas Visitas</div>
+    </div>
+</div>
+
+<div class="grid grid-cols-2">
+    <div class="glass-card">
+        <h3 style="margin-bottom: 20px; font-size: 18px;">Próximas Visitas</h3>
+        {% if proximas_visitas %}
+            {% for visita in proximas_visitas %}
+            <div style="padding: 16px; border-bottom: 1px solid rgba(52, 152, 219, 0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600;">{{ visita.hospital.nombre }}</div>
+                        <div style="font-size: 13px; color: var(--text-muted);">{{ visita.get_fecha_str() }} · {{ visita.get_hora_inicio_str() }}</div>
+                    </div>
+                    <span class="badge badge-{{ 'success' if visita.estado == 'confirmada' else 'info' }}">{{ visita.estado | title }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: var(--text-muted); text-align: center; padding: 24px;">No tienes visitas programadas</p>
+        {% endif %}
+        <a href="{{ url_for('visitas.nueva') }}" class="glass-btn glass-btn-primary" style="margin-top: 16px;">+ Nueva Visita</a>
+    </div>
+
+    <div class="glass-card">
+        <h3 style="margin-bottom: 20px; font-size: 18px;">Tickets Pendientes</h3>
+        {% if tickets_pendientes %}
+            {% for ticket in tickets_pendientes %}
+            <div style="padding: 16px; border-bottom: 1px solid rgba(52, 152, 219, 0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600;">#{{ ticket.numero }}</div>
+                        <div style="font-size: 13px; color: var(--text-muted);">{{ ticket.visita_rel.hospital.nombre if ticket.visita_rel else 'N/A' }}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: 700; color: var(--accent);">{{ ticket.monto | currency }}</div>
+                        <span class="badge badge-warning">Pendiente</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: var(--text-muted); text-align: center; padding: 24px;">No tienes tickets pendientes</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

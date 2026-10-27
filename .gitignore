@@ -1,0 +1,41 @@
+# Entorno virtual
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Variables de entorno
+.env
+.env.local
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Backups
+app.backup.*/
+*.backup.*
+
+# Uploads (solo en desarrollo)
+app/static/uploads/facturas/*
+!app/static/uploads/facturas/.gitkeep
+
+# Logs
+*.log
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Database local
+*.db
+*.sqlite
+*.sqlite3

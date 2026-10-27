@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Venta - PromoCir{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>&#128200; Registrar Venta Real</h2>
+    <p>Registra el material que efectivamente vendiste durante la visita.</p>
+</div>
+
+<div class="glass-card" style="max-width: 600px;">
+    <form method="POST" action="{{ url_for('visitas.registrar_venta', visita_id=visita.id) }}" id="formVenta">
+        
+        <!-- Info de la visita -->
+        <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid var(--glass-border);">
+            <h4 style="margin-bottom: 12px;">&#128203; Visita Realizada</h4>
+            <p style="margin: 0; color: var(--text-secondary);"><strong>Hospital:</strong> {{ visita.hospital.nombre }}</p>
+            <p style="margin: 8px 0 0 0; color: var(--text-secondary);"><strong>Paciente:</strong> {{ visita.paciente_nombre }}</p>
+            <p style="margin: 8px 0 0 0; color: var(--text-secondary);"><strong>Cirujano:</strong> {{ visita.cirujano_nombre }}</p>
+        </div>
+
+        <div class="form-group">
+            <label><strong>Lograste la venta? *</strong></label>
+            <div style="display: flex; gap: 16px; margin-top: 8px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 12px 20px; border-radius: 8px; background: rgba(161, 222, 185, 0.1); border: 2px solid var(--pastel-mint); flex: 1;">
+                    <input type="radio" name="venta_realizada" value="si" required onchange="toggleVenta(true)">
+                    <span style="color: var(--pastel-mint); font-weight: 600;">&#9989; Si, logre la venta</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 12px 20px; border-radius: 8px; background: rgba(217, 163, 186, 0.1); border: 2px solid var(--pastel-rose); flex: 1;">
+                    <input type="radio" name="venta_realizada" value="no" required onchange="toggleVenta(false)">
+                    <span style="color: var(--pastel-rose); font-weight: 600;">&#10060; No, no hubo venta</span>
+                </label>
+            </div>
+        </div>
+
+        <div id="datosVenta" style="display: none;">
+            <div class="form-group">
+                <label>Producto (Material) Vendido *</label>
+                <select name="material_vendido" class="glass-input">
+                    <option value="">-- Selecciona el material --</option>
+                    {% for m in materiales %}
+                    <option value="{{ m.id }}">{{ m.nombre }} {% if m.categoria %}- {{ m.categoria }}{% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Cantidad Vendida *</label>
+                    <input type="number" name="cantidad_vendida" class="glass-input" min="1" value="1" placeholder="Ej: 5">
+                </div>
+                <div class="form-group">
+                    <label>Monto Total de Venta (MXN) *</label>
+                    <input type="number" name="monto_venta" class="glass-input" min="0" step="0.01" placeholder="Ej: 15000.00">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Notas Adicionales</label>
+                <textarea name="notas_venta" class="glass-input" placeholder="Detalles de la venta, condiciones especiales, etc."></textarea>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <button type="submit" class="glass-btn glass-btn-primary" onclick="return confirmarVenta()">Registrar Venta</button>
+            <a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}" class="glass-btn">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<script>
+function toggleVenta(mostrar) {
+    var div = document.getElementById('datosVenta');
+    var inputs = div.querySelectorAll('input, select');
+    
+    if (mostrar) {
+        div.style.display = 'block';
+        inputs.forEach(function(el) {
+            if (el.name !== 'notas_venta') el.setAttribute('required', 'required');
+        });
+    } else {
+        div.style.display = 'none';
+        inputs.forEach(function(el) {
+            el.removeAttribute('required');
+        });
+    }
+}
+
+function confirmarVenta() {
+    var ventaSi = document.querySelector('input[name="venta_realizada"][value="si"]').checked;
+    var ventaNo = document.querySelector('input[name="venta_realizada"][value="no"]').checked;
+    
+    if (!ventaSi && !ventaNo) {
+        alert('Por favor selecciona si lograste la venta o no.');
+        return false;
+    }
+    
+    if (ventaSi) {
+        var material = document.querySelector('select[name="material_vendido"]').value;
+        var cantidad = document.querySelector('input[name="cantidad_vendida"]').value;
+        var monto = document.querySelector('input[name="monto_venta"]').value;
+        
+        if (!material || !cantidad || !monto) {
+            alert('Por favor completa todos los campos de la venta.');
+            return false;
+        }
+        
+        return confirm('CONFIRMACION FINAL\\n\\nEstas registrando una venta real.\\n\\nEsta informacion se usara para reportes de ingresos.\\n\\nLos datos son correctos?');
+    }
+    
+    return confirm('CONFIRMACION FINAL\\n\\nEstas registrando que NO hubo venta en esta visita.\\n\\nEsta informacion se usara para reportes de ingresos.\\n\\nConfirmar?');
+}
+</script>
+{% endblock %}

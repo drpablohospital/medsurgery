@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Med Surgery{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/glassmorphism.css') }}?v=2">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <h1>Med Surgery</h1>
+            <span>Gestión Quirúrgica</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="{{ url_for('dashboard.index') }}" class="{% if request.endpoint == 'dashboard.index' %}active{% endif %}">Dashboard</a></li>
+            <li><a href="{{ url_for('visitas.calendario') }}" class="{% if request.endpoint.startswith('visitas') %}active{% endif %}">Calendario</a></li>
+            <li><a href="{{ url_for('visitas.nueva') }}" class="{% if request.endpoint == 'visitas.nueva' %}active{% endif %}">Nueva Visita</a></li>
+            {% if not current_user.es_admin() %}
+            <li><a href="{{ url_for('visitas.ofertas') }}" class="{% if request.endpoint == 'visitas.ofertas' %}active{% endif %}">&#128161; Ofertas</a></li>
+            <li><a href="{{ url_for('visitas.mis_tickets') }}" class="{% if request.endpoint == 'visitas.mis_tickets' %}active{% endif %}">&#128196; Mis Tickets</a></li>
+            {% endif %}
+            {% if current_user.es_admin() %}
+            <li><a href="{{ url_for('admin.promotores') }}" class="{% if request.endpoint == 'admin.promotores' %}active{% endif %}">Promotores</a></li>
+            <li><a href="{{ url_for('admin.hospitales') }}" class="{% if request.endpoint == 'admin.hospitales' %}active{% endif %}">Hospitales</a></li>
+            <li><a href="{{ url_for('admin.materiales') }}" class="{% if request.endpoint == 'admin.materiales' %}active{% endif %}">Materiales</a></li>
+            <li><a href="{{ url_for('admin.tickets') }}" class="{% if request.endpoint == 'admin.tickets' %}active{% endif %}">Tickets</a></li>
+            <li><a href="{{ url_for('admin.finanzas') }}" class="{% if request.endpoint == 'admin.finanzas' %}active{% endif %}">Finanzas</a></li>
+            <li><a href="{{ url_for('visitas.ofertas') }}" class="{% if request.endpoint == 'visitas.ofertas' %}active{% endif %}">&#128161; Ofertas</a></li>
+            {% endif %}
+        </ul>
+        <div class="sidebar-user">
+            <div class="sidebar-user-name">{{ current_user.nombre }}</div>
+            <div class="sidebar-user-role">{{ 'Administrador' if current_user.es_admin() else 'Promotor' }}</div>
+            <a href="{{ url_for('auth.logout') }}" class="glass-btn glass-btn-sm" style="margin-top: 12px; width: 100%; justify-content: center;">Cerrar Sesión</a>
+        </div>
+    </aside>
+    {% endif %}
+
+    <main class="{% if current_user.is_authenticated %}main-content{% else %}container{% endif %}">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} fade-in">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

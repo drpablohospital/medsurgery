@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Mis Tickets - PromoCir{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Historial de Tickets</h2>
+    <p>Tu rendimiento y rentabilidad como promotor</p>
+</div>
+
+<div class="grid grid-cols-4" style="margin-bottom: 32px;">
+    <div class="glass-card stat-card">
+        <div class="stat-value">{{ total_cobrado | currency }}</div>
+        <div class="stat-label">Total Cobrado</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value">{{ total_pendiente | currency }}</div>
+        <div class="stat-label">Pendiente de Aprobación</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value">{{ total_venta_materiales | currency }}</div>
+        <div class="stat-label">Venta de Materiales</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value">{{ "%.1f" | format(rentabilidad) }}%</div>
+        <div class="stat-label">Rentabilidad</div>
+    </div>
+</div>
+
+<div class="glass-card">
+    <h3 style="margin-bottom: 20px;">Mis Tickets</h3>
+    
+    {% if tickets %}
+    <table class="glass-table">
+        <thead>
+            <tr>
+                <th>Ticket</th>
+                <th>Hospital</th>
+                <th>Fecha</th>
+                <th>Honorarios</th>
+                <th>Materiales Vendidos</th>
+                <th>Total Venta</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in tickets %}
+            <tr>
+                <td><strong>#{{ t.numero }}</strong></td>
+                <td>{{ t.visita.hospital.nombre if t.visita else 'N/A' }}</td>
+                <td>{{ t.visita.get_fecha_str() if t.visita else 'N/A' }}</td>
+                <td>{{ t.monto | currency }}</td>
+                <td>
+                    {% if t.materiales_vendidos %}
+                        {{ t.materiales_vendidos | length }} artículos
+                    {% else %}
+                        - 
+                    {% endif %}
+                </td>
+                <td>
+                    {% if t.materiales_vendidos %}
+                        {% set total = namespace(valor=0) %}
+                        {% for mat in t.materiales_vendidos %}
+                            {% set precio = mat.get('precio_venta', 0) if mat is mapping else 0 %}
+                            {% set cantidad = mat.get('cantidad', 1) if mat is mapping else 1 %}
+                            {% set total.valor = total.valor + (precio * cantidad) %}
+                        {% endfor %}
+                        <strong style="color: var(--accent);">{{ total.valor | currency }}</strong>
+                    {% else %}
+                        $0.00
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge badge-{{ 'success' if t.estado == 'pagado' else 'warning' if t.estado == 'pendiente' else 'info' if t.estado == 'aprobado' else 'danger' }}">
+                        {{ t.estado | title }}
+                    </span>
+                </td>
+                <td>
+                    {% if t.estado == 'pendiente' %}
+                        <a href="{{ url_for('visitas.cerrar_ticket', ticket_id=t.id) }}" class="glass-btn glass-btn-sm glass-btn-success">
+                            Cerrar
+                        </a>
+                    {% elif t.estado == 'cerrado_por_promotor' %}
+                        <span class="badge badge-info">Esperando revision</span>
+                    {% else %}
+                        - 
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: var(--text-muted); text-align: center; padding: 24px;">
+        No tienes tickets generados aún.
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

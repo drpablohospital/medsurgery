@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+
+{% block title %}Finanzas - PromoCir{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2>💰 Reporte Financiero</h2>
+            <p>Análisis económico real basado en tickets cobrados</p>
+        </div>
+        <a href="{{ url_for('admin.tickets') }}" class="glass-btn glass-btn-primary">Ver Tickets</a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="glass-card" style="margin-bottom: 24px;">
+    <form method="GET" action="{{ url_for('admin.finanzas') }}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: end;">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Fecha Desde</label>
+            <input type="date" name="fecha_desde" value="{{ fecha_desde or '' }}" class="glass-input">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Fecha Hasta</label>
+            <input type="date" name="fecha_hasta" value="{{ fecha_hasta or '' }}" class="glass-input">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Promotor</label>
+            <select name="promotor_id" class="glass-input">
+                <option value="">Todos</option>
+                {% for p in promotores %}
+                <option value="{{ p.id }}" {% if promotor_id == p.id %}selected{% endif %}>{{ p.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <button type="submit" class="glass-btn glass-btn-primary" style="width: 100%;">Filtrar</button>
+        </div>
+    </form>
+</div>
+
+<!-- ============================================================ -->
+<!-- FLUJO ECONÓMICO REAL -->
+<!-- ============================================================ -->
+
+<div style="margin-bottom: 24px;">
+    <h3 style="color: var(--accent); margin-bottom: 16px; font-size: 18px;">📊 Flujo Económico Real (Tickets Cobrados)</h3>
+    
+    <div class="grid grid-cols-3" style="margin-bottom: 32px;">
+        <div class="glass-card stat-card">
+            <div class="stat-value" style="color: var(--success);">{{ total_ingresos | currency }}</div>
+            <div class="stat-label">Ingresos Reales (Materiales)</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Ventas validadas</div>
+        </div>
+        <div class="glass-card stat-card">
+            <div class="stat-value" style="color: var(--danger);">{{ total_egresos | currency }}</div>
+            <div class="stat-label">Egresos Reales (Visitas)</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Pagos a promotores</div>
+        </div>
+        <div class="glass-card stat-card">
+            <div class="stat-value" style="color: var(--accent); font-size: 28px;">{{ ganancia_neta | currency }}</div>
+            <div class="stat-label">Ganancia Neta</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Ingresos - Egresos</div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PROYECCIONES (PRÓXIMOS PAGOS) -->
+<!-- ============================================================ -->
+
+<div style="margin-bottom: 24px;">
+    <h3 style="color: var(--warning); margin-bottom: 16px; font-size: 18px;">📈 Proyecciones (Próximos Pagos)</h3>
+    
+    <div class="grid grid-cols-3" style="margin-bottom: 32px;">
+        <div class="glass-card stat-card" style="background: rgba(255, 193, 7, 0.05); border: 1px solid rgba(255, 193, 7, 0.2);">
+            <div class="stat-value" style="color: var(--warning);">{{ total_proyectado_aprobado | currency }}</div>
+            <div class="stat-label">Tickets Aprobados</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">{{ resumen_estados.aprobados }} tickets</div>
+        </div>
+        <div class="glass-card stat-card" style="background: rgba(255, 152, 0, 0.05); border: 1px solid rgba(255, 152, 0, 0.2);">
+            <div class="stat-value" style="color: #ff9800;">{{ total_proyectado_pendiente | currency }}</div>
+            <div class="stat-label">Tickets Pendientes</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">{{ resumen_estados.pendientes }} tickets</div>
+        </div>
+        <div class="glass-card stat-card" style="background: rgba(255, 87, 34, 0.05); border: 1px solid rgba(255, 87, 34, 0.2);">
+            <div class="stat-value" style="color: #ff5722;">{{ proyeccion_gastos | currency }}</div>
+            <div class="stat-label">Proyección Total de Gastos</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Liquidez necesaria</div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- RESUMEN DE ESTADOS -->
+<!-- ============================================================ -->
+
+<div style="margin-bottom: 24px;">
+    <h3 style="color: var(--info); margin-bottom: 16px; font-size: 18px;">📋 Resumen de Estados</h3>
+    
+    <div class="grid grid-cols-4" style="margin-bottom: 32px;">
+        <div class="glass-card stat-card">
+            <div class="stat-value" style="color: var(--success);">{{ resumen_estados.cobrados }}</div>
+            <div class="stat-label">Cobrados</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Ingresos confirmados</div>
+        </div>
+        <div class="glass-card stat-card">
+            <div class="stat-value" style="color: var(--warning);">{{ resumen_estados.aprobados }}</div>
+            <div class="stat-label">Aprobados</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Por pagar</div>
+        </div>
+        <div class="glass-card stat-card">
+            <div class="stat-value" style="color: var(--info);">{{ resumen_estados.cerrados_por_promotor }}</div>
+            <div class="stat-label">Cerrados por Promotor</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Por confirmar cobro</div>
+        </div>
+        <div class="glass-card stat-card">
+            <div class="stat-value" style="color: var(--danger);">{{ resumen_estados.pendientes }}</div>
+            <div class="stat-label">Pendientes</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Sin revisar</div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TOP PROMOTORES (POR INGRESOS GENERADOS) -->
+<!-- ============================================================ -->
+
+<div class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="margin-bottom: 16px; font-size: 18px;">🏆 Top Promotores (Por Ingresos Generados)</h3>
+    
+    {% if top_promotores %}
+    <table class="glass-table">
+        <thead>
+            <tr>
+                <th>Promotor</th>
+                <th style="text-align: center;">Tickets Cobrados</th>
+                <th style="text-align: right;">Total Ingresos</th>
+                <th style="text-align: right;">Promedio por Ticket</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tp in top_promotores %}
+            <tr>
+                <td>
+                    <div style="font-weight: 600;">{{ tp.promotor.nombre }}</div>
+                    <div style="font-size: 13px; color: var(--text-muted);">{{ tp.promotor.email }}</div>
+                </td>
+                <td style="text-align: center;">{{ tp.tickets_cobrados }}</td>
+                <td style="text-align: right; color: var(--success); font-weight: 600;">{{ tp.total_ingresos | currency }}</td>
+                <td style="text-align: right;">{{ tp.promedio_ticket | currency }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: var(--text-muted); text-align: center;">No hay datos de promotores con tickets cobrados</p>
+    {% endif %}
+</div>
+
+<!-- ============================================================ -->
+<!-- MATERIALES MÁS VENDIDOS -->
+<!-- ============================================================ -->
+
+<div class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="margin-bottom: 16px; font-size: 18px;">📦 Materiales Más Vendidos (Tickets Cobrados)</h3>
+    
+    {% if top_materiales %}
+    <table class="glass-table">
+        <thead>
+            <tr>
+                <th>Material</th>
+                <th style="text-align: center;">Cantidad Vendida</th>
+                <th style="text-align: right;">Total Venta</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mat in top_materiales %}
+            <tr>
+                <td>{{ mat.nombre }}</td>
+                <td style="text-align: center;">{{ mat.cantidad }}</td>
+                <td style="text-align: right; color: var(--accent); font-weight: 600;">{{ mat.total_venta | currency }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: var(--text-muted); text-align: center;">No hay datos de ventas de materiales</p>
+    {% endif %}
+</div>
+
+<!-- ============================================================ -->
+<!-- EVOLUCIÓN MENSUAL -->
+<!-- ============================================================ -->
+
+<div class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="margin-bottom: 16px; font-size: 18px;">📈 Evolución Mensual (Últimos 6 Meses)</h3>
+    
+    {% if datos_mensuales %}
+    <table class="glass-table">
+        <thead>
+            <tr>
+                <th>Mes</th>
+                <th style="text-align: right;">Ingresos Reales</th>
+                <th style="text-align: right;">Egresos Reales</th>
+                <th style="text-align: right;">Ganancia Neta</th>
+                <th style="text-align: right;">Proyección de Gastos</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dm in datos_mensuales %}
+            <tr>
+                <td><strong>{{ dm.mes }}</strong></td>
+                <td style="text-align: right; color: var(--success);">{{ dm.ingresos | currency }}</td>
+                <td style="text-align: right; color: var(--danger);">{{ dm.egresos | currency }}</td>
+                <td style="text-align: right; color: var(--accent); font-weight: 600;">{{ dm.ganancia | currency }}</td>
+                <td style="text-align: right; color: var(--warning);">{{ dm.proyeccion | currency }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: var(--text-muted); text-align: center;">No hay datos mensuales disponibles</p>
+    {% endif %}
+</div>
+
+<!-- ============================================================ -->
+<!-- FLUJO DEL PROCESO -->
+<!-- ============================================================ -->
+
+<div class="glass-card" style="margin-bottom: 24px; background: rgba(0, 255, 127, 0.05);">
+    <h3 style="margin-bottom: 16px; font-size: 18px;">🔄 Flujo Económico del Sistema</h3>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+        <div style="text-align: center; padding: 16px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+            <div style="font-size: 24px; margin-bottom: 8px;">1️⃣</div>
+            <div style="font-weight: 600;">Oferta/Visita</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Admin publica o programa</div>
+        </div>
+        <div style="text-align: center; padding: 16px; background: rgba(255,193,7,0.1); border-radius: 8px;">
+            <div style="font-size: 24px; margin-bottom: 8px;">2️⃣</div>
+            <div style="font-weight: 600; color: var(--warning);">Aprobación</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Admin aprueba visita</div>
+        </div>
+        <div style="text-align: center; padding: 16px; background: rgba(0, 150, 255, 0.1); border-radius: 8px;">
+            <div style="font-size: 24px; margin-bottom: 8px;">3️⃣</div>
+            <div style="font-weight: 600; color: var(--info);">Visita Realizada</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Promotor declara ventas</div>
+        </div>
+        <div style="text-align: center; padding: 16px; background: rgba(0, 255, 127, 0.1); border-radius: 8px;">
+            <div style="font-size: 24px; margin-bottom: 8px;">4️⃣</div>
+            <div style="font-weight: 600; color: var(--success);">Cobro Confirmado</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Admin valida pago</div>
+        </div>
+    </div>
+    
+    <div style="margin-top: 16px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px; border-left: 3px solid var(--accent);">
+        <p style="margin: 0; font-size: 14px; line-height: 1.6;">
+            <strong>💡 Nota:</strong> Los "Ingresos Reales" corresponden a las ventas de materiales validadas por el admin al confirmar el cobro. 
+            Los "Egresos Reales" son los pagos que el admin realiza a los promotores por las visitas realizadas. 
+            Las "Proyecciones" muestran los gastos futuros basados en tickets aprobados y pendientes.
+        </p>
+    </div>
+</div>
+
+{% endblock %}

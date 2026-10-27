@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Calendario - PromoCir{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2>Calendario de Visitas</h2>
+            <p>Visualiza todas las visitas programadas</p>
+        </div>
+        <a href="{{ url_for('visitas.nueva') }}" class="glass-btn glass-btn-primary">+ Nueva Visita</a>
+    </div>
+</div>
+
+<div class="glass-card">
+    <div class="form-row" style="margin-bottom: 20px;">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Hospital</label>
+            <select id="hospitalSelect" class="glass-input">
+                <option value="">Todos los hospitales</option>
+                {% for h in hospitales %}
+                <option value="{{ h.id }}">{{ h.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Navegar</label>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="cambiarMes(-1)" class="glass-btn glass-btn-sm">&larr;</button>
+                <span id="mesActual" style="padding: 8px 16px; font-weight: 600;"></span>
+                <button onclick="cambiarMes(1)" class="glass-btn glass-btn-sm">&rarr;</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="calendario" class="calendario-container">
+        <!-- Calendario generado por JS -->
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let fechaActual = new Date("{{ fecha_actual.isoformat() }}");
+let eventos = [];
+
+function cargarEventos() {
+    const hospitalId = document.getElementById('hospitalSelect').value;
+    const year = fechaActual.getFullYear();
+    const month = String(fechaActual.getMonth() + 1).padStart(2, '0');
+    
+    fetch(`/visitas/api/disponibilidad?hospital_id=${hospitalId}&fecha=${year}-${month}-01`)
+        .then(r => r.json())
+        .then(data => {
+            eventos = data;
+            renderizarCalendario();
+        });
+}
+
+function renderizarCalendario() {
+    const cal = document.getElementById('calendario');
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    document.getElementById('mesActual').textContent = `${meses[fechaActual.getMonth()]} ${fechaActual.getFullYear()}`;
+    
+    const year = fechaActual.getFullYear();
+    const month = fechaActual.getMonth();
+    const primerDia = new Date(year, month, 1).getDay();
+    const diasEnMes = new Date(year, month + 1, 0).getDate();
+    
+    let html = '<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 8px;">';
+    ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].forEach(d => {
+        html += `<div style="text-align: center; font-weight: 600; color: var(--text-muted); font-size: 12px; padding: 8px;">${d}</div>`;
+    });
+    html += '</div>';
+    
+    html += '<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;">';
+    
+    // Espacios vacíos
+    for (let i = 0; i < primerDia; i++) {
+        html += '<div></div>';
+    }
+    
+    for (let dia = 1; dia <= diasEnMes; dia++) {
+        const fechaStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        const eventosDia = eventos.filter(e => e.start.startsWith(fechaStr));
+        
+        html += `<div class="glass-card" style="min-height: 100px; padding: 8px; cursor: pointer;" onclick="if(event.target.tagName !== 'A') window.location.href='/visitas/nueva?fecha=${fechaStr}'">`;
+        html += `<div style="font-weight: 600; margin-bottom: 4px;">${dia}</div>`;
+        
+        eventosDia.forEach(e => {
+            const color = e.estado === 'realizada' ? '#27ae60' : e.estado === 'programada' ? '#3498db' : '#e74c3c';
+            html += `<a href="/visitas/${e.id}" style="display: block; font-size: 11px; padding: 4px 6px; background: ${color}30; border-left: 3px solid ${color}; border-radius: 4px; margin-bottom: 4px; color: var(--text-primary); text-decoration: none;">${e.title}</a>`;
+        });
+        
+        html += '</div>';
+    }
+    
+    html += '</div>';
+    cal.innerHTML = html;
+}
+
+function cambiarMes(delta) {
+    fechaActual.setMonth(fechaActual.getMonth() + delta);
+    cargarEventos();
+}
+
+document.getElementById('hospitalSelect').addEventListener('change', cargarEventos);
+
+cargarEventos();
+</script>
+{% endblock %}

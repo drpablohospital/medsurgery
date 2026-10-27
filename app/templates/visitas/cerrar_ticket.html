@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}Cerrar Ticket - {{ ticket.numero }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Cerrar Ticket {{ ticket.numero }}</h2>
+    <p>Declara los materiales vendidos y adjunta la factura</p>
+</div>
+
+<form method="POST" enctype="multipart/form-data" class="glass-card" style="padding: 32px;" id="cerrarForm">
+    <input type="hidden" name="materiales_vendidos" id="materiales_vendidos" value="[]">
+    
+    <div style="margin-bottom: 24px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Monto Cobrado (MXN)</label>
+        <input type="number" name="monto_declarado" step="0.01" min="0" required
+               class="glass-input" style="width: 100%; max-width: 300px;"
+               placeholder="Ej: 1500.00" value="{{ ticket.monto }}">
+    </div>
+
+    <div style="margin-bottom: 24px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Materiales Vendidos</label>
+        <div id="materiales-container"></div>
+        <button type="button" onclick="agregarMaterial()" class="glass-btn glass-btn-sm">+ Agregar Material</button>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Factura (PDF/Imagen)</label>
+        <input type="file" name="factura" accept=".pdf,.jpg,.jpeg,.png" required class="glass-input">
+    </div>
+
+    <div style="margin-bottom: 24px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Notas</label>
+        <textarea name="notas_cierre" rows="4" class="glass-input" style="width: 100%;"
+                  placeholder="Detalles adicionales..."></textarea>
+    </div>
+
+    <button type="submit" class="glass-btn glass-btn-success" id="btnCerrar">Cerrar Ticket</button>
+</form>
+
+<script>
+// Materiales disponibles del admin (nombre, precio_sugerido)
+const materialesDisponibles = [
+    {% for mat in materiales_admin %}
+    { nombre: "{{ mat.nombre }}", precio: {{ mat.costo_referencia if mat.costo_referencia else 0 }} },
+    {% endfor %}
+];
+
+function agregarMaterial() {
+    const container = document.getElementById('materiales-container');
+    const div = document.createElement('div');
+    div.className = 'material-row';
+    div.style.cssText = 'display: grid; grid-template-columns: 3fr 1fr 1fr auto; gap: 8px; margin-bottom: 8px; align-items: start;';
+    
+    // Crear select con materiales
+    let optionsHtml = '<option value="">Selecciona material...</option>';
+    materialesDisponibles.forEach(mat => {
+        optionsHtml += `<option value="${mat.nombre}" data-precio="${mat.precio}">${mat.nombre} ($${mat.precio.toFixed(2)})</option>`;
+    });
+    optionsHtml += '<option value="OTRO" data-precio="0">Otro (especificar)</option>';
+    
+    div.innerHTML = `
+        <div>
+            <select class="glass-input material-select" required onchange="actualizarPrecio(this)">
+                ${optionsHtml}
+            </select>
+            <input type="text" class="glass-input otro-input" style="display: none; margin-top: 4px; width: 100%;" placeholder="Especifica el material">
+        </div>
+        <input type="number" class="glass-input cantidad-input" placeholder="Cantidad" min="1" value="1" required oninput="calcularSubtotal(this)">
+        <input type="number" class="glass-input precio-input" placeholder="Precio unitario" step="0.01" min="0" required>
+        <button type="button" onclick="this.parentElement.remove()" class="glass-btn glass-btn-danger">X</button>
+    `;
+    
+    container.appendChild(div);
+}
+
+function actualizarPrecio(select) {
+    const selectedOption = select.options[select.selectedIndex];
+    const precio = parseFloat(selectedOption.getAttribute('data-precio')) || 0;
+    const div = select.closest('.material-row');
+    const precioInput = div.querySelector('.precio-input');
+    const otroInput = div.querySelector('.otro-input');
+    
+    if (selectedOption.value === 'OTRO') {
+        otroInput.style.display = 'block';
+        precioInput.value = '';
+        precioInput.placeholder = 'Precio unitario';
+    } else {
+        otroInput.style.display = 'none';
+        precioInput.value = precio.toFixed(2);
+    }
+}
+
+function calcularSubtotal(input) {
+    // Placeholder para cálculo futuro
+}
+
+// Antes de enviar, construir JSON y enviar manualmente
+document.getElementById('cerrarForm').addEventListener('submit', function(e) {
+    e.preventDefault(); // Prevenir envío automático
+    
+    const materiales = [];
+    const filas = document.querySelectorAll('.material-row');
+    
+    filas.forEach(fila => {
+        const select = fila.querySelector('.material-select');
+        const otroInput = fila.querySelector('.otro-input');
+        const cantidadInput = fila.querySelector('.cantidad-input');
+        const precioInput = fila.querySelector('.precio-input');
+        
+        let nombre = select.value;
+        if (nombre === 'OTRO') {
+            nombre = otroInput.value || 'Otro';
+        }
+        
+        if (nombre) {
+            materiales.push({
+                nombre: nombre,
+                cantidad: parseInt(cantidadInput.value) || 1,
+                precio_venta: parseFloat(precioInput.value) || 0
+            });
+        }
+    });
+    
+    // Actualizar campo oculto
+    document.getElementById('materiales_vendidos').value = JSON.stringify(materiales);
+    
+    // Enviar formulario manualmente
+    this.submit();
+});
+
+// Agregar primer material
+agregarMaterial();
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Usuario - PromoCir{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2>Registrar Nuevo Usuario</h2>
+            <p>Crear cuenta de promotor o administrador</p>
+        </div>
+        <a href="{{ url_for('admin.promotores') }}" class="glass-btn">← Volver</a>
+    </div>
+</div>
+
+<div class="glass-card" style="max-width: 600px;">
+    <form method="POST" action="{{ url_for('auth.registro') }}">
+        <div class="form-group">
+            <label>Nombre *</label>
+            <input type="text" name="nombre" class="glass-input" required>
+        </div>
+        <div class="form-group">
+            <label>Email *</label>
+            <input type="email" name="email" class="glass-input" required>
+        </div>
+        <div class="form-group">
+            <label>Contraseña *</label>
+            <input type="password" name="password" class="glass-input" minlength="6" required>
+        </div>
+        <div class="form-group">
+            <label>Tipo</label>
+            <select name="tipo" class="glass-input">
+                <option value="promotor">Promotor</option>
+                <option value="admin">Administrador</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Teléfono</label>
+            <input type="text" name="telefono" class="glass-input">
+        </div>
+        <div class="form-group">
+            <label>Región Asignada</label>
+            <input type="text" name="region_asignada" class="glass-input" placeholder="Ej: Centro, Norte, Sur">
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <button type="submit" class="glass-btn glass-btn-primary">Registrar Usuario</button>
+            <a href="{{ url_for('admin.promotores') }}" class="glass-btn">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

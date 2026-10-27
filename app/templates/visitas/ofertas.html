@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Ofertas de Visitas - PromoCir{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2>&#128161; Ofertas de Visitas</h2>
+            <p>Visitas disponibles para que las tomes. El primero en aceptar se la adjudica.</p>
+        </div>
+        <div style="background: rgba(231, 218, 150, 0.1); border: 1px solid var(--pastel-yellow); border-radius: 12px; padding: 12px 20px;">
+            <span style="color: var(--pastel-yellow); font-size: 14px;">&#9888; Recuerda: solo puedes tomar visitas sin conflictos de horario.</span>
+        </div>
+    </div>
+</div>
+
+{% if visitas %}
+<div style="display: grid; gap: 16px;">
+    {% for v in visitas %}
+    <div class="glass-card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+            <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <span style="background: var(--pastel-yellow); color: var(--bg-dark); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;">OFERTA</span>
+                    <span style="font-size: 18px; font-weight: 700;">{{ v.hospital.nombre }}</span>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Fecha y Hora</div>
+                        <div style="font-weight: 600;">{{ v.get_fecha_str() }} | {{ v.get_hora_inicio_str() }} - {{ v.get_hora_fin_str() }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Tipo</div>
+                        <div style="font-weight: 600; color: var(--accent);">{{ v.tipo_cirugia }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Paciente</div>
+                        <div style="font-weight: 600;">{{ v.paciente_nombre }} ({{ v.paciente_edad or '?' }} años)</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Costo Visita</div>
+                        <div style="font-weight: 600;">${{ "%0.2f"|format(v.costo_visita|float) }} MXN</div>
+                    </div>
+                </div>
+                
+                <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 8px;">
+                    <strong>Cirujano:</strong> {{ v.cirujano_nombre }} ({{ v.cirujano_especialidad or 'Sin especialidad' }})
+                </div>
+                
+                {% if v.materiales_ofrecidos %}
+                <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 8px;">
+                    <strong>Materiales a ofrecer:</strong>
+                    {% for m in v.materiales_ofrecidos %}
+                    <span style="background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; margin-right: 4px;">{{ m.nombre }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if v.especificaciones %}
+                <div style="font-size: 13px; color: var(--text-muted); background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; margin-top: 8px;">
+                    <strong>Notas:</strong> {{ v.especificaciones }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+                <form method="POST" action="{{ url_for('visitas.adjudicar_visita', visita_id=v.id) }}" onsubmit="return confirm('Al adjudicarte esta visita, te comprometes a realizarla. Continuar?');">
+                    <button type="submit" class="glass-btn glass-btn-success" style="font-size: 16px; padding: 12px 24px;">
+                        &#9989; Adjudicarme esta Visita
+                    </button>
+                </form>
+                <span style="font-size: 12px; color: var(--text-muted);">Primero en aceptar, gana</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="glass-card" style="text-align: center; padding: 48px;">
+    <div style="font-size: 64px; margin-bottom: 16px;">&#128218;</div>
+    <h3 style="margin-bottom: 12px;">No hay ofertas disponibles</h3>
+    <p style="color: var(--text-muted);">Actualmente no hay visitas en oferta. Vuelve a revisar mas tarde.</p>
+</div>
+{% endif %}
+{% endblock %}

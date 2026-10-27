@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle Visita #{{ visita.id }} - PromoCir{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2>Visita #{{ visita.id }}</h2>
+            <p>{{ visita.hospital.nombre }} · {{ visita.get_fecha_str() }} {{ visita.get_hora_inicio_str() }} - {{ visita.get_hora_fin_str() }}</p>
+        </div>
+        <span class="badge badge-{{ 'success' if visita.estado == 'realizada' else 'info' if visita.estado == 'programada' else 'warning' if visita.estado == 'confirmada' else 'danger' }}">{{ visita.estado | title }}</span>
+    </div>
+</div>
+
+<div class="grid grid-cols-2">
+    <div class="glass-card">
+        <h3 style="margin-bottom: 20px; font-size: 18px;">Información de la Visita</h3>
+        
+        <div style="margin-bottom: 16px;">
+            <div style="color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Hospital</div>
+            <div style="font-weight: 600;">{{ visita.hospital.nombre }}</div>
+            <div style="font-size: 13px; color: var(--text-muted);">{{ visita.hospital.direccion or 'Sin dirección registrada' }}</div>
+        </div>
+        
+        <div style="margin-bottom: 16px;">
+            <div style="color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Paciente</div>
+            <div style="font-weight: 600;">{{ visita.paciente_nombre }}</div>
+            {% if visita.paciente_edad %}<div style="font-size: 13px; color: var(--text-muted);">{{ visita.paciente_edad }} años</div>{% endif %}
+        </div>
+        
+        <div style="margin-bottom: 16px;">
+            <div style="color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Cirujano</div>
+            <div style="font-weight: 600;">{{ visita.cirujano_nombre }}</div>
+            {% if visita.cirujano_especialidad %}<div style="font-size: 13px; color: var(--text-muted);">{{ visita.cirujano_especialidad }}</div>{% endif %}
+        </div>
+        
+        <div style="margin-bottom: 16px;">
+            <div style="color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Tipo de Cirugía</div>
+            <div style="font-weight: 600;">{{ visita.tipo_cirugia }}</div>
+        </div>
+        
+        <div style="margin-bottom: 16px;">
+            <div style="color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Costo de Visita</div>
+            <div style="font-weight: 700; color: var(--accent); font-size: 20px;">{{ visita.costo_visita | currency }}</div>
+        </div>
+        
+        {% if visita.especificaciones %}
+        <div style="margin-bottom: 16px;">
+            <div style="color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Especificaciones</div>
+            <div style="font-size: 14px;">{{ visita.especificaciones }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="glass-card">
+        <h3 style="margin-bottom: 20px; font-size: 18px;">Materiales Ofrecidos</h3>
+        
+        {% if visita.materiales_ofrecidos %}
+            {% for mat in visita.materiales_ofrecidos %}
+            <div style="padding: 12px; border-bottom: 1px solid rgba(52, 152, 219, 0.1); display: flex; justify-content: space-between;">
+                <span>{{ mat.nombre }}</span>
+                <span style="color: var(--text-muted); font-size: 13px;">{{ mat.categoria or 'General' }}</span>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: var(--text-muted);">No se registraron materiales</p>
+        {% endif %}
+
+        <hr style="border: none; border-top: 1px solid var(--glass-border); margin: 24px 0;">
+
+        <h3 style="margin-bottom: 16px; font-size: 16px;">Promotor</h3>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700;">{{ visita.promotor.nombre[0] }}</div>
+            <div>
+                <div style="font-weight: 600;">{{ visita.promotor.nombre }}</div>
+                <div style="font-size: 13px; color: var(--text-muted);">{{ visita.promotor.email }}</div>
+            </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--glass-border); margin: 24px 0;">
+
+        <!-- Acciones -->
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% if visita.estado == 'programada' and visita.usuario_id == current_user.id %}
+            <form method="POST" action="{{ url_for('visitas.marcar_realizada', visita_id=visita.id) }}">
+                <button type="submit" class="glass-btn glass-btn-success" style="width: 100%; justify-content: center;"></small>Marcar como Realizada</button>
+            </form>
+            {% endif %}
+            
+            {% if visita.estado == 'realizada' and visita.usuario_id == current_user.id and not visita.ticket_generado %}
+            <form method="POST" action="{{ url_for('visitas.generar_ticket', visita_id=visita.id) }}">
+                <button type="submit" class="glass-btn glass-btn-primary" style="width: 100%; justify-content: center;">Generar Ticket de Cobro</button>
+            </form>
+            {% endif %}
+            
+            {% if visita.estado == 'realizada' and (visita.usuario_id == current_user.id or current_user.es_admin()) %}
+            <a href="{{ url_for('visitas.registrar_venta', visita_id=visita.id) }}" class="glass-btn" style="width: 100%; justify-content: center; background: linear-gradient(135deg, rgba(161, 222, 185, 0.2), rgba(207, 225, 175, 0.2)); border-color: var(--pastel-mint);">
+                &#128200; Registrar Venta Real
+            </a>
+            {% endif %}
+            
+            {% if visita.ticket_generado and visita.ticket_rel %}
+            <div class="ticket-card {{ visita.ticket_rel.estado }}">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600;">Ticket #{{ visita.ticket_rel.numero }}</div>
+                        <div style="font-size: 13px; color: var(--text-muted);">{{ visita.ticket_rel.monto | currency }}</div>
+                    </div>
+                    <span class="badge badge-{{ 'success' if visita.ticket_rel.estado == 'pagado' else 'warning' if visita.ticket_rel.estado == 'pendiente' else 'info' if visita.ticket_rel.estado == 'aprobado' else 'danger' }}">{{ visita.ticket_rel.estado | title }}</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if visita.estado != 'cancelada' and visita.estado != 'realizada' %}
+            <form method="POST" action="{{ url_for('visitas.cancelar', visita_id=visita.id) }}" onsubmit="return confirm('¿Estás seguro de cancelar esta visita?');">
+                <button type="submit" class="glass-btn glass-btn-danger" style="width: 100%; justify-content: center;">Cancelar Visita</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 24px;">
+    <a href="{{ url_for('visitas.calendario') }}" class="glass-btn">&larr; Volver al Calendario</a>
+</div>
+{% endblock %}

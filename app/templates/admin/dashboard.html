@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel Admin - PromoCir{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Panel de Administración</h2>
+    <p>Resumen general del sistema</p>
+</div>
+
+<div class="grid grid-cols-4" style="margin-bottom: 32px;">
+    <div class="glass-card stat-card">
+        <div class="stat-value">{{ total_promotores }}</div>
+        <div class="stat-label">Promotores</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value">{{ total_hospitales }}</div>
+        <div class="stat-label">Hospitales</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value">{{ total_materiales }}</div>
+        <div class="stat-label">Materiales</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value">{{ visitas_hoy }}</div>
+        <div class="stat-label">Visitas Hoy</div>
+    </div>
+</div>
+
+<div class="grid grid-cols-4" style="margin-bottom: 32px;">
+    <div class="glass-card stat-card">
+        <div class="stat-value" style="color: var(--warning);">{{ tickets_pendientes }}</div>
+        <div class="stat-label">Tickets Pendientes</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value" style="color: var(--accent);">{{ tickets_aprobados }}</div>
+        <div class="stat-label">Tickets Aprobados</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value" style="color: var(--success);">{{ tickets_pagados }}</div>
+        <div class="stat-label">Tickets Pagados</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value" style="color: var(--info);">{{ monto_pagado | currency }}</div>
+        <div class="stat-label">Total Pagado</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value" style="color: var(--success);">{{ tickets_cobrados }}</div>
+        <div class="stat-label">Tickets Cobrados</div>
+    </div>
+</div>
+
+<div class="grid grid-cols-3" style="margin-bottom: 32px;">
+    <div class="glass-card stat-card">
+        <div class="stat-value" style="color: var(--success);">{{ total_ingresos | currency }}</div>
+        <div class="stat-label">Ingresos (Materiales)</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value" style="color: var(--danger);">{{ total_gastos | currency }}</div>
+        <div class="stat-label">Gastos (Visitas)</div>
+    </div>
+    <div class="glass-card stat-card">
+        <div class="stat-value" style="color: var(--accent); font-size: 28px;">{{ ganancia_neta | currency }}</div>
+        <div class="stat-label">Ganancia Neta</div>
+    </div>
+</div>
+
+<div class="grid grid-cols-2">
+    <div class="glass-card">
+        <h3 style="margin-bottom: 20px; font-size: 18px;">Últimas Visitas</h3>
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Hospital</th>
+                    <th>Promotor</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in ultimas_visitas %}
+                <tr>
+                    <td><a href="{{ url_for('visitas.detalle', visita_id=v.id) }}" style="color: var(--accent); text-decoration: none;">{{ v.hospital.nombre }}</a></td>
+                    <td>{{ v.promotor.nombre }}</td>
+                    <td>{{ v.get_fecha_str() }} {{ v.get_hora_inicio_str() }}</td>
+                    <td><span class="badge badge-{{ 'success' if v.estado == 'realizada' else 'info' if v.estado == 'programada' else 'warning' if v.estado == 'confirmada' else 'danger' }}">{{ v.estado | title }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="glass-card">
+        <h3 style="margin-bottom: 20px; font-size: 18px;">Tickets Recientes</h3>
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Ticket</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in ultimos_tickets %}
+                <tr>
+                    <td>#{{ t.numero }}</td>
+                    <td>{{ t.monto | currency }}</td>
+                    <td><span class="badge badge-{{ 'success' if t.estado == 'pagado' else 'warning' if t.estado == 'pendiente' else 'info' if t.estado == 'aprobado' else 'danger' }}">{{ t.estado | title }}</span></td>
+                    <td>{{ t.created_at.strftime('%d/%m/%Y') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="grid grid-cols-2" style="margin-top: 24px;">
+    <div class="glass-card">
+        <h3 style="margin-bottom: 16px; font-size: 18px;">Acciones Rápidas</h3>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <a href="{{ url_for('admin.promotores') }}" class="glass-btn">Gestionar Promotores</a>
+            <a href="{{ url_for('admin.hospitales') }}" class="glass-btn">Gestionar Hospitales</a>
+            <a href="{{ url_for('admin.materiales') }}" class="glass-btn">Gestionar Materiales</a>
+            <a href="{{ url_for('admin.tickets') }}" class="glass-btn glass-btn-primary">Ver Tickets Pendientes</a>
+            <a href="{{ url_for('admin.finanzas') }}" class="glass-btn">Reporte Financiero</a>
+        </div>
+    </div>
+
+    <div class="glass-card">
+        <h3 style="margin-bottom: 16px; font-size: 18px;">Resumen Económico</h3>
+        <div style="margin-bottom: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Monto Pendiente</div>
+            <div style="font-size: 24px; font-weight: 700; color: var(--warning);">{{ monto_pendiente | currency }}</div>
+        </div>
+        <div style="margin-bottom: 12px;">
+            <div style="color: var(--text-muted); font-size: 13px;">Monto Aprobado</div>
+            <div style="font-size: 24px; font-weight: 700; color: var(--accent);">{{ monto_aprobado | currency }}</div>
+        </div>
+        <div>
+            <div style="color: var(--text-muted); font-size: 13px;">Total Pagado</div>
+            <div style="font-size: 24px; font-weight: 700; color: var(--success);">{{ monto_pagado | currency }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+# PromoCir - CRM de Promotores Médicos
+# Dependencias Python
+
+# Core Flask
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+Flask-WTF==1.2.1
+Flask-Migrate==4.0.7
+
+# Seguridad
+Werkzeug==3.0.3
+WTForms==3.1.2
+email-validator==2.1.1
+
+# Base de datos - psycopg v3 es compatible con Python 3.14
+psycopg==3.2.1
+SQLAlchemy==2.0.31
+
+# Utilidades
+python-dotenv==1.0.1
+python-dateutil==2.9.0
+
+# Servidor
+Gunicorn==23.0.0
